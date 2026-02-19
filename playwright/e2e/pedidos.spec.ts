@@ -1,87 +1,83 @@
-import { test } from '@playwright/test'
-
+import { test, expect } from '../support/fixtures'
 import { generateOrderCode } from '../support/helpers'
-import { Navbar } from '../support/components/Navbar'
-import { LandingPage } from '../support/pages/LandingPage'
-import { OrderLockupPage, OrderDetails } from '../support/pages/OrderLockupPage'
+import type { OrderDetails } from '../support/actions/orderLookupActions'
 
 test.describe('Consulta de Pedido', () => {
-  let orderLockupPage
+    test.beforeEach(async ({ app }) => {
+        await app.orderLookup.open()
+    })
 
-  test.beforeEach(async ({ page }) => {
-    await new LandingPage(page).goto()
-    await new Navbar(page).orderLockupLink()
-    await new OrderLockupPage(page).validatePageLoaded()
-    orderLockupPage = new OrderLockupPage(page)
-    orderLockupPage.validatePageLoaded()
-  })
+    test('deve consultar um pedido aprovado', async ({ app }) => {
+        const order: OrderDetails = {
+            number: 'VLO-FPWLMY',
+            status: 'APROVADO' as const,
+            color: 'Lunar White',
+            wheels: 'sport Wheels',
+            customer: {
+                name: 'Guilherme Neves',
+                email: 'teste@teste.com'
+            },
+            payment: 'À Vista'
+        }
 
-  test('deve consultar um pedido aprovado', async ({ page }) => {
-    const order = {
-      number: 'VLO-FPWLMY',
-      status: 'APROVADO' as const,
-      color: 'Lunar White',
-      wheels: 'sport Wheels',
-      customer: {
-        name: 'Guilherme Neves',
-        email: 'teste@teste.com'
-      },
-      payment: 'À Vista'
-    } satisfies OrderDetails
+        await app.orderLookup.searchOrder(order.number)
+        await app.orderLookup.validateOrderDetails(order)
+        await app.orderLookup.validateStatusBadge(order.status)
+    })
 
-    await orderLockupPage.searchOrder(order.number)
-    await orderLockupPage.validateOrderDetails(order)
-  })
+    test('deve consultar um pedido reprovado', async ({ app }) => {
+        const order: OrderDetails = {
+            number: 'VLO-RMIO07',
+            status: 'REPROVADO',
+            color: 'Glacier Blue',
+            wheels: 'aero Wheels',
+            customer: {
+              name: 'Guilhermes-Neves Labs teste',
+              email: 'guilherme.nevesone@gmail.com'
+            },
+            payment: 'À Vista'
+        }
 
-  test('deve consultar um pedido reprovado', async ({ page }) => {
+        await app.orderLookup.searchOrder(order.number)
+        await app.orderLookup.validateOrderDetails(order)
+        await app.orderLookup.validateStatusBadge(order.status)
+    })
 
-    // Test Data
-    const order = {
-      number: 'VLO-RMIO07',
-      status: 'REPROVADO',
-      color: 'Glacier Blue',
-      wheels: 'aero Wheels',
-      customer: {
-        name: 'Guilhermes-Neves Labs teste',
-        email: 'guilherme.nevesone@gmail.com'
-      },
-      payment: 'À Vista'
-    } satisfies OrderDetails
+    test('deve consultar um pedido em analise', async ({ app }) => {
+        const order: OrderDetails = {
+            number: 'VLO-LGQ54L',
+            status: 'EM_ANALISE',
+            color: 'Glacier Blue',
+            wheels: 'aero Wheels',
+            customer: {
+              name: 'Guilherme Neves',
+              email: 'guilherme.neves@globant.com'
+            },
+            payment: 'À Vista'
+        }
 
-    await orderLockupPage.searchOrder(order.number)
-    await orderLockupPage.validateOrderDetails(order)
-  })
+        await app.orderLookup.searchOrder(order.number)
+        await app.orderLookup.validateOrderDetails(order)
+        await app.orderLookup.validateStatusBadge(order.status)
+    })
 
-  test('deve consultar um pedido em analise', async ({ page }) => {
+    test('deve exibir mensagem quando o pedido não é encontrado', async ({ app }) => {
+        const order = generateOrderCode()
+        await app.orderLookup.searchOrder(order)
+        await app.orderLookup.validateOrderNotFound()
+    })
 
-    // Test Data
-    const order = {
-      number: 'VLO-LGQ54L',
-      status: 'EM_ANALISE',
-      color: 'Glacier Blue',
-      wheels: 'aero Wheels',
-      customer: {
-        name: 'Guilherme Neves',
-        email: 'guilherme.neves@globant.com'
-      },
-      payment: 'À Vista'
-    } satisfies OrderDetails
+    test('deve exibir mensagem quando o código do pedido está fora do padrão', async ({ app }) => {
+        const orderCode = 'XYZ-999-INVALIDO'
+        await app.orderLookup.searchOrder(orderCode)
+        await app.orderLookup.validateOrderNotFound()
+    })
 
-    await orderLockupPage.searchOrder(order.number)
-    await orderLockupPage.validateOrderDetails(order)
-  })
+    test('deve manter o botão de busca desabilitado com campo vazio ou apenas espaços', async ({ app, page }) => {
+        const button = app.orderLookup.elements.searchButton
+        await expect(button).toBeDisabled()
 
-  test('deve exibir mensagem quando o pedido não é encontrado', async ({ page }) => {
-    const order = generateOrderCode()
-
-    await orderLockupPage.searchOrder(order)
-    await orderLockupPage.validateOrderNotFound()
-  })
-
-  test('deve exibir mensagem quando o código do pedido está fora do padrão', async ({ page }) => {
-    const orderCode = 'INVALID-123'
-    
-    await orderLockupPage.searchOrder(orderCode)
-    await orderLockupPage.validateOrderNotFound()
-  })
+        await app.orderLookup.elements.orderInput.fill('     ')
+        await expect(button).toBeDisabled()
+    })
 })
