@@ -99,13 +99,12 @@ test.describe('Checkout', () => {
 
       await app.checkout.fillCustomerData(customer)
       await app.checkout.selectStore('Velô Paulista')
+
       await expect(app.checkout.elements.termsCheckbox).not.toBeChecked()
+
       await app.checkout.submit();
 
       await expect(termsAlert).toHaveText('Aceite os termos');
     });
   })
-
-
-
 });
