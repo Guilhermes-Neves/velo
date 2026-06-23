@@ -1,4 +1,4 @@
-import { test } from '../support/fixtures'
+import { test, expect } from '../support/fixtures'
 import { generateOrderCode } from '../support/helpers'
 import type { OrderDetails } from '../support/actions/orderLookupActions'
 
@@ -77,5 +77,13 @@ test.describe('Consulta de Pedido', () => {
     test('deve exibir mensagem quando o número do pedido está fora do padrão', async ({ app }) => {
         await app.orderLookup.searchOrder('ABC-12345')
         await app.orderLookup.validateOrderNotFound()
+    })
+
+    test('deve manter o botão de busca desabilitado quando o campo de busca está vazio ou apenas espaços', async ({ app, page }) => {
+        const button = app.orderLookup.elements.searchButton
+        await expect(button).toBeDisabled()
+        
+        await app.orderLookup.elements.orderInput.fill('   ')
+        await expect(button).toBeDisabled()
     })
 })
