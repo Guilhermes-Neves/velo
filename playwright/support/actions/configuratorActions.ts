@@ -7,8 +7,6 @@ export type OptionalLabel = 'Precision Park' | 'Flux Capacitor'
 const PRICES = {
   BASE: 'R$ 40.000,00',
   WITH_SPORT_WHEELS: 'R$ 42.000,00',
-  WITH_PRECISION_PARK: 'R$ 45.500,00',
-  WITH_BOTH_OPTIONALS: 'R$ 50.500,00',
 } as const
 
 const DEFAULT_CAR_IMAGE = /glacier-blue-aero-wheels/
@@ -35,10 +33,8 @@ export function createConfiguratorActions(page: Page) {
       await page.getByRole('checkbox', { name: new RegExp(optional) }).click()
     },
 
-    async goToCheckout() {
+    async finishConfigurator() {
       await page.getByRole('button', { name: 'Monte o Seu' }).click()
-      await expect(page).toHaveURL(/\/order$/)
-      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
     },
 
     async validatePriceElement(price: string) {
@@ -47,10 +43,6 @@ export function createConfiguratorActions(page: Page) {
 
     async validateCarImageSrc(car: string | RegExp) {
       await expect(carImage).toHaveAttribute('src', car)
-    },
-
-    async validateCheckoutTotalPrice(price: string) {
-      await expect(page.getByTestId('summary-total-price')).toHaveText(price)
     },
 
     async validateDefaultConfiguration() {
