@@ -1,15 +1,13 @@
 import { test, expect } from '../support/fixtures'
+import { createCheckoutActions } from '../support/actions/checkoutActions'
 
 test.describe('Checkout', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/order');
-    await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible();
-  });
-
   test.describe('Validações de campos obrigatórios', () => {
-    let alerts: any
+    let alerts: ReturnType<typeof createCheckoutActions>['elements']['alerts']
 
-    test.beforeEach(async ({ app }) => {
+    test.beforeEach(async ({ page, app }) => {
+      await page.goto('/order')
+      await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
       alerts = app.checkout.elements.alerts
     });
 
@@ -95,5 +93,42 @@ test.describe('Checkout', () => {
 
       await expect(alerts.terms).toHaveText('Aceite os termos');
     });
+  })
+
+  test.describe('Pagamento à vista - fluxo feliz', () => {
+    test('deve criar pedido aprovado com pagamento à vista', async ({ app }) => {
+      const order = {
+        customer: {
+          name: 'Maria',
+          lastname: 'Silva',
+          email: 'maria.silva@email.com',
+          phone: '(11) 98765-4321',
+          document: '52998224725',
+        },
+        store: 'Velô Paulista - Av. Paulista, 1000',
+        totalPrice: 'R$ 40.000,00'
+      }
+
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguration()
+      await app.configurator.finishConfigurator()
+      await app.checkout.validateLoaded()
+      await app.checkout.validateSummaryTotalPrice(order.totalPrice)
+
+      await app.checkout.fillCustomerData(order.customer)
+      await app.checkout.selectStore(order.store)
+      await app.checkout.selectPaymentAvista()
+      await app.checkout.validateAvistaPaymentPrice(order.totalPrice)
+      await app.checkout.validateSummaryTotalPrice(order.totalPrice)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      await app.checkout.validateApprovedOrderSuccess({
+        customerFullName: order.customer.name + ' ' + order.customer.lastname,
+        email: order.customer.email,
+        store: order.store,
+        totalPrice: order.totalPrice,
+      })
+    })
   })
 });

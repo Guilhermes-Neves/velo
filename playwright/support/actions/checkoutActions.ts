@@ -51,8 +51,31 @@ export function createCheckoutActions(page: Page) {
       await termsCheckbox.check()
     },
 
+    async selectPaymentAvista() {
+      await page.getByTestId('payment-avista').click()
+    },
+
+    async validateAvistaPaymentPrice(price: string) {
+      await expect(page.getByTestId('payment-avista')).toContainText(price)
+    },
+
     async submit() {
       await page.getByRole('button', { name: 'Confirmar Pedido' }).click()
+    },
+
+    async validateApprovedOrderSuccess(expected: {
+      customerFullName: string
+      email: string
+      store: string
+      totalPrice: string
+    }) {
+      await expect(page).toHaveURL(/\/success$/)
+      await expect(page.getByTestId('success-status')).toHaveText('Pedido Aprovado!')
+      await expect(page.getByTestId('order-id')).toHaveText(/^VLO-[A-Z0-9]+$/)
+      await expect(page.getByText(expected.customerFullName)).toBeVisible()
+      await expect(page.getByText(expected.email)).toBeVisible()
+      await expect(page.getByText(expected.store)).toBeVisible()
+      await expect(page.getByText(expected.totalPrice)).toBeVisible()
     },
   }
 }
