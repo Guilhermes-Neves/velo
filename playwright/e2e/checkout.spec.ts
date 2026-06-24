@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures'
 import { createCheckoutActions } from '../support/actions/checkoutActions'
+import { deleteOrderByEmail } from '../support/database/orderRepository'
 
 test.describe('Checkout', () => {
   test.describe('Validações de campos obrigatórios', () => {
@@ -108,6 +109,8 @@ test.describe('Checkout', () => {
         store: 'Velô Paulista - Av. Paulista, 1000',
         totalPrice: 'R$ 40.000,00'
       }
+
+      await deleteOrderByEmail(order.customer.email)
 
       await app.configurator.open()
       await app.configurator.validateDefaultConfiguration()
