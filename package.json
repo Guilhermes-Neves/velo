@@ -89,7 +89,7 @@
     "kysely": "^0.28.14",
     "pg": "^8.20.0",
     "postcss": "^8.5.6",
-    "supabase": "^2.84.10",
+    "supabase": "^2.108.0",
     "tailwindcss": "^3.4.17",
     "tdpw": "^1.0.36",
     "typescript": "^5.8.3",
