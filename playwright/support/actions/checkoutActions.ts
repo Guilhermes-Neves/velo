@@ -55,6 +55,10 @@ export function createCheckoutActions(page: Page) {
       await page.getByTestId('payment-avista').click()
     },
 
+    async selectPaymentFinanciamento() {
+      await page.getByTestId('payment-financiamento').click()
+    },
+
     async validateAvistaPaymentPrice(price: string) {
       await expect(page.getByTestId('payment-avista')).toContainText(price)
     },

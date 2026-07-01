@@ -133,5 +133,55 @@ test.describe('Checkout', () => {
         totalPrice: order.totalPrice,
       })
     })
+
+    test('Validar aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento.', async ({ page, app }) => {
+      const order = {
+        customer: {
+          name: 'Steve',
+          lastname: 'Woz',
+          email: 'steve.woz@email.com',
+          phone: '(11) 98765-4321',
+          document: '60171533070',
+        },
+        store: 'Velô Paulista - Av. Paulista, 1000',
+        paymenthMethod: 'Financimento',
+        totalPrice: 'R$ 40.000,00',
+        totalWithTax: 'R$ 40.800,00'
+      }
+
+      await deleteOrderByEmail(order.customer.email)
+
+      await page.route('**/functions/v1/credit-analysis', async route => {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            status: 'Done',
+            score: 710,
+          }),
+        });
+      });
+
+      await app.configurator.open()
+      await app.configurator.validateDefaultConfiguration()
+      await app.configurator.finishConfigurator()
+      await app.checkout.validateLoaded()
+      await app.checkout.validateSummaryTotalPrice(order.totalPrice)
+
+      await app.checkout.fillCustomerData(order.customer)
+      await app.checkout.selectStore(order.store)
+      await app.checkout.selectPaymentFinanciamento()
+      await app.checkout.validateAvistaPaymentPrice(order.totalPrice)
+      await app.checkout.validateSummaryTotalPrice(order.totalWithTax)
+      await app.checkout.acceptTerms()
+      await app.checkout.submit()
+
+      await app.checkout.validateApprovedOrderSuccess({
+        customerFullName: order.customer.name + ' ' + order.customer.lastname,
+        email: order.customer.email,
+        store: order.store,
+        totalPrice: order.totalWithTax,
+      })
+    })
   })
 });
